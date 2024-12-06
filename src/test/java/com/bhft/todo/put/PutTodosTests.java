@@ -2,6 +2,7 @@ package com.bhft.todo.put;
 
 import com.bhft.todo.BaseTest;
 import io.qameta.allure.restassured.AllureRestAssured;
+import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Assertions;
@@ -33,7 +34,7 @@ public class PutTodosTests extends BaseTest {
 
         // Отправляем PUT запрос для обновления
         given()
-                .filter(new AllureRestAssured())
+                .filter(new ResponseLoggingFilter())
                 .contentType(ContentType.JSON)
                 .body(updatedTodo)
                 .when()

@@ -1,16 +1,17 @@
 package com.bhft.todo.post;
 
 import com.bhft.todo.BaseTest;
+import com.todo.models.Todo;
+import com.todo.requests.TodoRequest;
+import com.todo.specs.RequestSpec;
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.http.ContentType;
-import io.restassured.response.Response;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
-
-import com.todo.models.Todo;
 
 public class PostTodosTests extends BaseTest {
 
@@ -124,14 +125,13 @@ public class PostTodosTests extends BaseTest {
     @Test
     public void testCreateTodoWithInvalidDataTypes() {
         // Поле 'completed' содержит строку вместо булевого значения
-        String invalidTodoJson = "{ \"id\": 4, \"text\": \"Invalid Data Type\", \"completed\": \"notBoolean\" }";
+        Todo newTodo = new Todo(3, "djjdjd", false);
 
-        given()
-                .filter(new AllureRestAssured())
-                .contentType(ContentType.JSON)
-                .body(invalidTodoJson)
-                .when()
-                .post("/todos")
+
+        TodoRequest todoRequest = new TodoRequest(RequestSpec.authSpec());
+
+
+        todoRequest.create(newTodo)
                 .then()
                 .statusCode(400)
                 .contentType(ContentType.TEXT)
