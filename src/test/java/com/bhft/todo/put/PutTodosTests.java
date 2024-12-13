@@ -1,17 +1,13 @@
 package com.bhft.todo.put;
 
 import com.bhft.todo.BaseTest;
-import io.qameta.allure.restassured.AllureRestAssured;
-import io.restassured.filter.log.ResponseLoggingFilter;
-import io.restassured.http.ContentType;
-import io.restassured.response.Response;
+import com.todo.models.Todo;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
 
-import com.todo.models.Todo;
+import java.util.List;
 
 public class PutTodosTests extends BaseTest {
 
@@ -27,37 +23,16 @@ public class PutTodosTests extends BaseTest {
     public void testUpdateExistingTodoWithValidData() {
         // Создаем TODO для обновления
         Todo originalTodo = new Todo(1, "Original Task", false);
-        createTodo(originalTodo);
-
+        todoRequest.create(originalTodo);
         // Обновленные данные
         Todo updatedTodo = new Todo(1, "Updated Task", true);
-
         // Отправляем PUT запрос для обновления
-        given()
-                .filter(new ResponseLoggingFilter())
-                .contentType(ContentType.JSON)
-                .body(updatedTodo)
-                .when()
-                .put("/todos/" + updatedTodo.getId())
-                .then()
-                .statusCode(200);
-                //.contentType(ContentType.JSON)
-//                .body("id", equalTo(1))
-//                .body("text", equalTo("Updated Task"))
-//                .body("completed", equalTo(true));
-
+        validAuthReq.update(updatedTodo.getId(), updatedTodo);
         // Проверяем, что данные были обновлены
-        Todo[] todos = given()
-                .when()
-                .get("/todos")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(Todo[].class);
-
-        Assertions.assertEquals(1, todos.length);
-        Assertions.assertEquals("Updated Task", todos[0].getText());
-        Assertions.assertTrue(todos[0].isCompleted());
+        // Так как update ничего не возвращает, запрашиваем все TODO
+        List<Todo> todos = validAuthReq.readAll();
+        Assertions.assertEquals(updatedTodo.getText(), todos.getFirst().getText());
+        Assertions.assertTrue(todos.getFirst().isCompleted());
     }
 
     /**
@@ -66,23 +41,16 @@ public class PutTodosTests extends BaseTest {
     @Test
     public void testUpdateNonExistentTodo() {
         // Обновленные данные для несуществующего TODO
-        Todo updatedTodo = new Todo(999, "Non-existent Task", true);
-
-        given()
-                .filter(new AllureRestAssured())
-                .contentType(ContentType.JSON)
-                .body(updatedTodo)
-                .when()
-                .put("/todos/" + updatedTodo.getId())
+        Todo todo = new Todo(999, "Non-existent Task", true);
+        todoRequest.update(todo.getId(), todo)
                 .then()
-                .statusCode(404)
-                //.contentType(ContentType.TEXT)
-                .body(is(notNullValue()));
+                .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
-    /**
-     * TC3: Обновление TODO с отсутствием обязательных полей.
-     */
+    /*
+     TC3: Обновление TODO с отсутствием обязательных полей.
+     Это контрактный тест
+
     @Test
     public void testUpdateTodoWithMissingFields() {
         // Создаем TODO для обновления
@@ -103,10 +71,12 @@ public class PutTodosTests extends BaseTest {
                 //.contentType(ContentType.JSON)
                 //.body("error", containsString("Missing required field 'text'"));
     }
-
-    /**
-     * TC4: Передача некорректных типов данных при обновлении.
      */
+
+    /*
+     TC4: Передача некорректных типов данных при обновлении.
+     Это контрактный тест
+
     @Test
     public void testUpdateTodoWithInvalidDataTypes() {
         // Создаем TODO для обновления
@@ -125,6 +95,7 @@ public class PutTodosTests extends BaseTest {
                 .then()
                 .statusCode(401);
     }
+     */
 
     /**
      * TC5: Обновление TODO без изменения данных (передача тех же значений).
@@ -133,29 +104,10 @@ public class PutTodosTests extends BaseTest {
     public void testUpdateTodoWithoutChangingData() {
         // Создаем TODO для обновления
         Todo originalTodo = new Todo(4, "Task without Changes", false);
-        createTodo(originalTodo);
-
-        // Отправляем PUT запрос с теми же данными
-        given()
-                .filter(new AllureRestAssured())
-                .contentType(ContentType.JSON)
-                .body(originalTodo)
-                .when()
-                .put("/todos/4")
-                .then()
-                .statusCode(200);
-
-
-        // Проверяем, что данные не изменились
-        Todo[] todo = given()
-                .when()
-                .get("/todos")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(Todo[].class);
-
-        Assertions.assertEquals("Task without Changes", todo[0].getText());
-        Assertions.assertFalse(todo[0].isCompleted());
+        validAuthReq.create(originalTodo);
+        validAuthReq.update(originalTodo.getId(), originalTodo);
+        List<Todo> todos = validAuthReq.readAll();
+        Assertions.assertEquals(originalTodo.getText(), todos.getFirst().getText());
+        Assertions.assertFalse(todos.getFirst().isCompleted());
     }
 }

@@ -2,16 +2,14 @@ package com.bhft.todo.delete;
 
 import com.bhft.todo.BaseTest;
 
-import com.bhft.todo.BaseTest;
-import io.qameta.allure.restassured.AllureRestAssured;
-import io.restassured.http.ContentType;
-import io.restassured.response.Response;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
 import com.todo.models.Todo;
+
+import java.util.List;
+import java.util.Optional;
 
 public class DeleteTodosTests extends BaseTest {
 
@@ -27,38 +25,17 @@ public class DeleteTodosTests extends BaseTest {
     public void testDeleteExistingTodoWithValidAuth() {
         // Создаем TODO для удаления
         Todo todo = new Todo(1, "Task to Delete", false);
-        createTodo(todo);
-
-        // Отправляем DELETE запрос с корректной авторизацией
-        given()
-                .filter(new AllureRestAssured())
-                .auth()
-                .preemptive()
-                .basic("admin", "admin")
-                .when()
-                .delete("/todos/" + todo.getId())
-                .then()
-                .statusCode(204)
-                .body(is(emptyOrNullString())); // Проверяем, что тело ответа пустое
-
+        validAuthReq.create(todo);
+        // Удаляем TODO
+        validAuthReq.delete(todo.getId());
         // Получаем список всех TODO и проверяем, что удаленная задача отсутствует
-        Todo[] todos = given()
-                .when()
-                .get("/todos")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(Todo[].class);
-
+        List<Todo> todos = validAuthReq.readAll();
+        Optional<Todo> createdTodo = todos
+                .stream()
+                .filter(td -> td.getId() == todo.getId())
+                .findAny();
         // Проверяем, что удаленная задача отсутствует в списке
-        boolean found = false;
-        for (Todo t : todos) {
-            if (t.getId() == todo.getId()) {
-                found = true;
-                break;
-            }
-        }
-        Assertions.assertFalse(found, "Удаленная задача все еще присутствует в списке TODO");
+        Assertions.assertFalse(createdTodo.isPresent(), "Созданная задача не удалена");
     }
 
     /**
@@ -68,36 +45,18 @@ public class DeleteTodosTests extends BaseTest {
     public void testDeleteTodoWithoutAuthHeader() {
         // Создаем TODO для удаления
         Todo todo = new Todo(2, "Task to Delete", false);
-        createTodo(todo);
-
-        // Отправляем DELETE запрос без заголовка Authorization
-        given()
-                .filter(new AllureRestAssured())
-                .when()
-                .delete("/todos/" + todo.getId())
+        validAuthReq.create(todo);
+        // Удаляем TODO
+        unauthReq.delete(todo.getId())
                 .then()
-                .statusCode(401);
-                //.contentType(ContentType.JSON)
-                //.body("error", notNullValue()); // Проверяем наличие сообщения об ошибке
-
-        // Проверяем, что TODO не было удалено
-        Todo[] todos = given()
-                .when()
-                .get("/todos")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(Todo[].class);
-
-        // Проверяем, что задача все еще присутствует в списке
-        boolean found = false;
-        for (Todo t : todos) {
-            if (t.getId() == todo.getId()) {
-                found = true;
-                break;
-            }
-        }
-        Assertions.assertTrue(found, "Задача отсутствует в списке TODO, хотя не должна была быть удалена");
+                .statusCode(HttpStatus.SC_UNAUTHORIZED);
+        // Получаем список всех TODO и проверяем, что задача не удалена
+        List<Todo> todos = validAuthReq.readAll();
+        Optional<Todo> createdTodo = todos
+                .stream()
+                .filter(td -> td.getId() == todo.getId())
+                .findAny();
+        Assertions.assertTrue(createdTodo.isPresent(), "Задача удалена неавторизованным пользователем");
     }
 
     /**
@@ -107,39 +66,21 @@ public class DeleteTodosTests extends BaseTest {
     public void testDeleteTodoWithInvalidAuth() {
         // Создаем TODO для удаления
         Todo todo = new Todo(3, "Task to Delete", false);
-        createTodo(todo);
 
-        // Отправляем DELETE запрос с некорректной авторизацией
-        given()
-                .filter(new AllureRestAssured())
-                .auth()
-                .preemptive()
-                .basic("invalidUser", "invalidPass")
-                .when()
-                .delete("/todos/" + todo.getId())
+        validAuthReq.create(todo);
+        invalidAuthReq.delete(todo.getId())
                 .then()
-                .statusCode(401);
-//                .contentType(ContentType.JSON)
-//                .body("error", notNullValue());
+                .statusCode(HttpStatus.SC_UNAUTHORIZED);
 
-        // Проверяем, что TODO не было удалено
-        Todo[] todos = given()
-                .when()
-                .get("/todos")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(Todo[].class);
+        // Получаем список всех TODO и проверяем, что задача не удалена
+        List<Todo> todos = validAuthReq.readAll();
+        Optional<Todo> createdTodo = todos
+                .stream()
+                .filter(td -> td.getId() == todo.getId())
+                .findAny();
 
-        // Проверяем, что задача все еще присутствует в списке
-        boolean found = false;
-        for (Todo t : todos) {
-            if (t.getId() == todo.getId()) {
-                found = true;
-                break;
-            }
-        }
-        Assertions.assertTrue(found, "Задача отсутствует в списке TODO, хотя не должна была быть удалена");
+        // Проверяем, что удаленная задача отсутствует в списке
+        Assertions.assertTrue(createdTodo.isPresent(), "Задача удалена неавторизованным пользователем");
     }
 
     /**
@@ -148,33 +89,16 @@ public class DeleteTodosTests extends BaseTest {
     @Test
     public void testDeleteNonExistentTodo() {
         // Отправляем DELETE запрос для несуществующего TODO с корректной авторизацией
-        given()
-                .filter(new AllureRestAssured())
-                .auth()
-                .preemptive()
-                .basic("admin", "admin")
-                .when()
-                .delete("/todos/999")
-                .then()
-                .statusCode(404);
-//                .contentType(ContentType.JSON)
-//                .body("error", notNullValue());
 
-        // Дополнительно можем проверить, что список TODO не изменился
-        Todo[] todos = given()
-                .when()
-                .get("/todos")
+        todoRequest.delete(999)
                 .then()
-                .statusCode(200)
-                .extract()
-                .as(Todo[].class);
-
-        // В данном случае, поскольку мы не добавляли задач с id 999, список должен быть пуст или содержать только ранее добавленные задачи
+                .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
-    /**
-     * TC5: Попытка удаления с некорректным форматом id (например, строка вместо числа).
-     */
+    /*
+     TC5: Попытка удаления с некорректным форматом id (например, строка вместо числа).
+     Больше похоже на контрактный тест
+
     @Test
     public void testDeleteTodoWithInvalidIdFormat() {
         // Отправляем DELETE запрос с некорректным id
@@ -190,4 +114,6 @@ public class DeleteTodosTests extends BaseTest {
 //                .contentType(ContentType.JSON)
 //                .body("error", notNullValue());
     }
+
+     */
 }

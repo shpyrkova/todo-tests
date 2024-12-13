@@ -1,5 +1,8 @@
 package com.bhft.todo;
 
+import com.todo.requests.TodoRequest;
+import com.todo.requests.ValidatedToDoRequest;
+import com.todo.specs.RequestSpec;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.BeforeAll;
 import com.todo.models.Todo;
@@ -12,6 +15,12 @@ public class BaseTest {
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = 8080;
     }
+
+    protected TodoRequest todoRequest = new TodoRequest(RequestSpec.authSpec());
+    protected ValidatedToDoRequest validAuthReq = new ValidatedToDoRequest(RequestSpec.authSpec());
+    protected TodoRequest unauthReq = new TodoRequest(RequestSpec.unauthSpec());
+    protected TodoRequest invalidAuthReq = new TodoRequest(RequestSpec.invalidAuthSpec());
+
 
     protected void createTodo(Todo todo) {
         given()
