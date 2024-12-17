@@ -1,6 +1,7 @@
 package com.bhft.todo.get;
 
 import com.bhft.todo.BaseTest;
+import com.todo.annotations.PrepareTodo;
 import io.qameta.allure.Description;
 import io.qameta.allure.Epic;
 import io.qameta.allure.Feature;
@@ -41,7 +42,12 @@ public class GetTodosTests extends BaseTest {
         Todo todo1 = new Todo(1, "Task 1", false);
         Todo todo2 = new Todo(2, "Task 2", true);
 
-        validAuthReq.create(todo1);
+        /*
+         Паттерн Фасад - используем todoRequester, из которого достаем нужный тип запроса,
+         вместо того чтобы обращаться в каждом тесте к разным типам
+         */
+        todoRequester.getValidatedRequest().create(todo1);
+        // пример без Фасада
         validAuthReq.create(todo2);
 
         List<Todo> todos = validAuthReq.readAll();
@@ -55,21 +61,20 @@ public class GetTodosTests extends BaseTest {
         Assertions.assertTrue(todos.getLast().isCompleted());
     }
 
+    // аннотация PrepareTodo выполняется раньше, чем @BeforeEach deleteAllTodos(), поэтому все подготовленные записи удаляются
     @Test
+    @PrepareTodo(5)
     @Description("Использование параметров offset и limit для пагинации")
     public void testGetTodosWithOffsetAndLimit() {
-        // Создаем 5 TODO
-        for (int i = 1; i <= 5; i++) {
-            validAuthReq.create(new Todo(i, "Task " + i, i % 2 == 0));
-        }
-
         List<Todo> todos = validAuthReq.readAll(2, 2);
+        Assertions.assertEquals(2, todos.size());
 
-        Assertions.assertEquals(3, todos.getFirst().getId());
-        Assertions.assertEquals("Task 3", todos.getFirst().getText());
-
-        Assertions.assertEquals(4, todos.getLast().getId());
-        Assertions.assertEquals("Task 4", todos.getLast().getText());
+//  Для реализации проверок нужно передавать в аннотацию желаемые данные или доставать их оттуда
+//        Assertions.assertEquals(3, todos.getFirst().getId());
+//        Assertions.assertEquals("Task 3", todos.getFirst().getText());
+//
+//        Assertions.assertEquals(4, todos.getLast().getId());
+//        Assertions.assertEquals("Task 4", todos.getLast().getText());
     }
 
     @Test

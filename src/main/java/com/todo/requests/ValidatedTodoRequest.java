@@ -1,17 +1,19 @@
 package com.todo.requests;
 
 import com.todo.models.Todo;
+import com.todo.requests.interfaces.CrudInterface;
+import com.todo.requests.interfaces.SearchInterface;
 import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import org.apache.http.HttpStatus;
 
 import java.util.List;
 
-public class ValidatedToDoRequest extends Request implements CrudInterface<Todo>, SearchInterface<Todo> {
+public class ValidatedTodoRequest extends Request implements CrudInterface<Todo>, SearchInterface<Todo> {
 
     private final TodoRequest todoRequest;
 
-    public ValidatedToDoRequest(RequestSpecification reqSpec) {
+    public ValidatedTodoRequest(RequestSpecification reqSpec) {
         super(reqSpec);
         todoRequest = new TodoRequest(reqSpec);
     }

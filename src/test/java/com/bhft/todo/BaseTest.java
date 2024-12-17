@@ -1,15 +1,26 @@
 package com.bhft.todo;
 
 import com.todo.requests.TodoRequest;
-import com.todo.requests.ValidatedToDoRequest;
-import com.todo.specs.RequestSpec;
+import com.todo.requests.TodoRequester;
+import com.todo.requests.ValidatedTodoRequest;
+import com.todo.specs.request.RequestSpec;
+import com.todo.storages.TestDataStorage;
 import io.restassured.RestAssured;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import com.todo.models.Todo;
+import org.junit.jupiter.api.BeforeEach;
 
 import static io.restassured.RestAssured.given;
 
 public class BaseTest {
+    protected TodoRequester todoRequester;
+
+    @BeforeEach
+    public void setupTest() {
+        todoRequester = new TodoRequester(RequestSpec.authSpec());
+    }
+
     @BeforeAll
     public static void setup() {
         RestAssured.baseURI = "http://localhost";
@@ -17,7 +28,7 @@ public class BaseTest {
     }
 
     protected TodoRequest todoRequest = new TodoRequest(RequestSpec.authSpec());
-    protected ValidatedToDoRequest validAuthReq = new ValidatedToDoRequest(RequestSpec.authSpec());
+    protected ValidatedTodoRequest validAuthReq = new ValidatedTodoRequest(RequestSpec.authSpec());
     protected TodoRequest unauthReq = new TodoRequest(RequestSpec.unauthSpec());
     protected TodoRequest invalidAuthReq = new TodoRequest(RequestSpec.invalidAuthSpec());
 
@@ -53,4 +64,14 @@ public class BaseTest {
                     .statusCode(204);
         }
     }
+
+    @AfterEach
+    public void clean() {
+        TestDataStorage.getInstance().getStorage()
+                .forEach((k, v) ->
+                        new TodoRequest(RequestSpec.authSpec())
+                                .delete(k));
+        TestDataStorage.getInstance().clean();
+    }
+
 }

@@ -2,7 +2,7 @@ package com.todo;
 
 import com.todo.requests.Request;
 import com.todo.requests.TodoRequest;
-import com.todo.specs.RequestSpec;
+import com.todo.specs.request.RequestSpec;
 
 public class Main {
     public static void main(String[] args) {
