@@ -21,7 +21,7 @@ public class TodoRequest extends Request implements CrudInterface<Todo>, SearchI
                 .spec(reqSpec)
                 .body(entity)
                 .when()
-                .post(TODO_ENDPOINT);
+                .post(new Endpoint(TODO_ENDPOINT).build());
     }
 
     @Override
@@ -30,7 +30,7 @@ public class TodoRequest extends Request implements CrudInterface<Todo>, SearchI
                 .spec(reqSpec)
                 .body(entity)
                 .when()
-                .put(TODO_ENDPOINT + id);
+                .put(new Endpoint(TODO_ENDPOINT).build() + id);
     }
 
     @Override
@@ -38,7 +38,7 @@ public class TodoRequest extends Request implements CrudInterface<Todo>, SearchI
         return given()
                 .spec(reqSpec)
                 .when()
-                .delete(TODO_ENDPOINT + id);
+                .delete(new Endpoint(TODO_ENDPOINT).build() + id);
     }
 
     @Override
@@ -47,13 +47,13 @@ public class TodoRequest extends Request implements CrudInterface<Todo>, SearchI
                 .queryParam("offset", offset)
                 .queryParam("limit", limit)
                 .when()
-                .get(TODO_ENDPOINT);
+                .get(new Endpoint(TODO_ENDPOINT).build());
     }
 
     @Override
     public Response readAll() {
         return given()
                 .when()
-                .get(TODO_ENDPOINT);
+                .get(new Endpoint(TODO_ENDPOINT).build());
     }
 }
